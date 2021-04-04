@@ -29,4 +29,8 @@
     asm volatile ("sev"); \
 } while (0)
 
+#define __NOP do {        \
+    asm volatile ("nop"); \
+} while (0)
+
 #endif

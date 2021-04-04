@@ -3,7 +3,10 @@
 
 #include <assert.h>
 
-#define ERR_DEBUG 5
+#include "hardware/gpio.h"
+#include "arm_utils.h"
+
+#define ERR_DEBUG 0
 
 /* To tell the user what's an IRQ handler */
 #define __irq_handler
@@ -39,7 +42,26 @@
         printf("%s: ASSERT REACHED\n", __func__); \
     }                                             \
 } while (0)
-#endif
+
+
+/*
+ * The NOP here is arbritrary, it's just hopefully enough for the GPIO to go
+ * high before we set it back to low
+ */
+#define GPIO_TOGGLE(gpio_num) do { \
+    gpio_put(gpio_num, 1);         \
+    __NOP;                         \
+    __NOP;                         \
+    __NOP;                         \
+    __NOP;                         \
+    __NOP;                         \
+    __NOP;                         \
+    __NOP;                         \
+    __NOP;                         \
+    __NOP;                         \
+    __NOP;                         \
+    gpio_put(gpio_num, 0);         \
+} while (0)
 
 static inline void memset32(void *buf, uint32_t val, size_t words)
 {
@@ -52,5 +74,6 @@ static inline void memset32(void *buf, uint32_t val, size_t words)
         ++p;
         --words;
     }
-
 }
+
+#endif

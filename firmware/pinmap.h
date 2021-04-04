@@ -30,4 +30,12 @@
 #define NUM_DPAD 4
 #define NUM_WS2812 16
 
+/*
+ * Useful if we need to see where we are in code, but are in a time critical
+ * situation where using a UART is too slow.
+ */
+#define PIN_DBG_0 12
+#define PIN_DBG_1 13
+#define PIN_DBG_2 14
+
 #endif
