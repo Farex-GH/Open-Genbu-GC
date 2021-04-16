@@ -48,20 +48,14 @@
  * The NOP here is arbritrary, it's just hopefully enough for the GPIO to go
  * high before we set it back to low
  */
-#define GPIO_TOGGLE(gpio_num) do { \
-    gpio_put(gpio_num, 1);         \
-    __NOP;                         \
-    __NOP;                         \
-    __NOP;                         \
-    __NOP;                         \
-    __NOP;                         \
-    __NOP;                         \
-    __NOP;                         \
-    __NOP;                         \
-    __NOP;                         \
-    __NOP;                         \
-    gpio_put(gpio_num, 0);         \
-} while (0)
+static void GPIO_TOGGLE(volatile uint8_t gpio_num) {
+    gpio_put(gpio_num, 1);
+    __NOP;
+    __NOP;
+    __NOP;
+    __NOP;
+    gpio_put(gpio_num, 0);
+}
 
 static inline void memset32(void *buf, uint32_t val, size_t words)
 {

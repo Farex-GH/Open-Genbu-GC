@@ -274,6 +274,8 @@ void usb_start_transfer(struct usb_endpoint_configuration *ep, uint8_t *buf,
         val |= USB_BUF_CTRL_FULL;
     }
 
+    GPIO_TOGGLE(PIN_DBG_1);
+
     /* Set pid and flip for next transfer.  This swaps between buffers. */
     val |= ep->next_pid ? USB_BUF_CTRL_DATA1_PID : USB_BUF_CTRL_DATA0_PID;
     ep->next_pid ^= 1u;

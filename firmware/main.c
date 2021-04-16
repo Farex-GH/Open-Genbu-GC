@@ -26,6 +26,16 @@ void control_loop(void)
     }
 }
 
+void dbg_gpio_init(void)
+{
+    gpio_init(PIN_DBG_0);
+    gpio_init(PIN_DBG_1);
+    gpio_init(PIN_DBG_2);
+    gpio_set_dir(PIN_DBG_0, true);
+    gpio_set_dir(PIN_DBG_1, true);
+    gpio_set_dir(PIN_DBG_2, true);
+}
+
 int main(void) {
     stdio_init_all();
     usb_ep_add_callback(0x81, ep1_in_cb);
@@ -33,6 +43,7 @@ int main(void) {
     usb_device_init();
     proc_init();
     board_io_init();
+    dbg_gpio_init();
 
     /*
      * In theory we could handle the WS2812s by using our priority queue, but

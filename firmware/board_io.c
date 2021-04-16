@@ -43,13 +43,7 @@ io_map_container io_container = {
     .dpad_size = ARRAY_SIZE(dpad_map)
 };
 
-/*
- * Anything to be done before we send the data should be handled here, such as
- * starting a timer for each button that was pressed for debounce handling.
- * TODO: It might be wise to disable interrupts on the GPIOs that will be
- * bouncing.  Then when the timer elapses, that callback re-enables the
- * interrupt on the bouncing GPIO.
- */
+/* Anything to be done before we send the data should be handled here */
 __prio_queue void *board_io_usb_prewrite(void *args)
 {
     DB_PRINT_L(3, "\n");
@@ -116,8 +110,25 @@ __irq_handler void board_io_irq_handler(void)
     size_t i;
     bool state_changed = false;
     bool new_state;
+    GPIO_TOGGLE(PIN_DBG_0);
 
+    /*
+     * Disable interrupts on any GPIOs that triggered the IRQ ASAP.
+     * The button presses have a consistent bounce that happens roughly 1us
+     * after the initial press.
+     * This means we most likely don't have time to disable the GPIO IRQ outside
+     * of this ISR.
+     *
+     * To re-enable the IRQ, we'll insert a timer into a timer pool whose
+     * callback enables the IRQ of any GPIOs whoser interrupts were set.
+     */
     __DISABLE_IRQ;
+
+    /* TODO: See what GPIOs have interrupts set, and add them to the timer pool.
+     * gpio_acknowledge_irq clears the IRQ, so we can use that same logic to
+     * Read the IRQs and see what is set
+     */
+    /* TODO: Do we need to worry about bouncing on release as well? */
 
     for (i = 0; i < ARRAY_SIZE(btn_map); ++i) {
         new_state = gpio_get(btn_map[i].gpio);

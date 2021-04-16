@@ -7,6 +7,16 @@
 #define STATE_BUTTON_PRESSED 0
 #define STATE_BUTTON_RELEASED 1
 
+/*
+ * Looked like 5-6ms on a scope, with what looked like some decent capacitance
+ * on the line.
+ * Round up to 10 to be safe.
+ * This number won't have any impact on how long it takes to send a packet,
+ * only how long until we decide to start reading from a certain pin again.
+ * The user is unlikely to hit a button 100 times a second, so this is fine.
+ */
+#define DEBOUNCE_MS 10
+
 #define TYPE_IOMC 0xf33df00d
 
 typedef struct {
