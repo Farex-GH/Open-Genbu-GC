@@ -10,7 +10,6 @@ add_executable(genbu-fw
     main.c
     proc_queue.c
     board_io.c
-    debounce.c
     descriptors.c
     usb_gamepad.c
     usb_driver.c

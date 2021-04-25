@@ -17,15 +17,4 @@
  */
 #define DEBOUNCE_PRESS_TIME_MS 50
 
-/*
- * This handles what we should do right away to stop bouncing.
- * For now it disables the correspoinding GPIO interrupt
- */
-static inline void debounce_start(uint8_t gpio)
-{
-    gpio_set_irq_enabled(gpio, GPIO_IRQ_EDGE_RISE | GPIO_IRQ_EDGE_FALL, false);
-}
-
-int64_t debounce_timer_elapsed(alarm_id_t id, void *arg);
-
 #endif
