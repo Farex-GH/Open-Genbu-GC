@@ -83,6 +83,8 @@ void update_press_led(const io_map_container *ioc)
  *
  * Because of this, we don't do anything except hand it off to CPU1, which
  * controls the WS2812s.
+ *
+ * Creating a buffer and DMAing it on CPU0 would be better, but I'm lazy.
  */
 void update_slide_led(const io_map_container *ioc)
 {
@@ -172,9 +174,9 @@ static bool board_io_iter_map(board_io *map, size_t sz)
              * whose callback enables the IRQ of any GPIOs whose interrupts
              * were set.
              */
+            gpio_start_debounce(&map[i]);
             map[i].state = new_state;
             state_changed = true;
-            gpio_start_debounce(&map[i]);
             DB_PRINT(4, "gpio: %d, new state: %d\n", map[i].gpio, map[i].state);
         }
         gpio_acknowledge_irq(map[i].gpio,
