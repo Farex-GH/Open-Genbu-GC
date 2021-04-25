@@ -9,8 +9,13 @@
 
 #include "board_io.h"
 
-#define DEBOUNCE_TIME_MS 10
-// typedef int64_t (*pfn_debounce_t)(uint8_t);
+#define DEBOUNCE_SLIDE_TIME_MS 15
+/*
+ * This shit bounces like crazy.
+ * The microswitch is the same as slides, but the button has its own bounce.
+ * This is bad enough where it may interfere with normal play.
+ */
+#define DEBOUNCE_PRESS_TIME_MS 50
 
 /*
  * This handles what we should do right away to stop bouncing.
@@ -22,6 +27,5 @@ static inline void debounce_start(uint8_t gpio)
 }
 
 int64_t debounce_timer_elapsed(alarm_id_t id, void *arg);
-void debounce_timer_start(uint32_t time, alarm_callback_t cb, void *cb_arg);
 
 #endif

@@ -22,7 +22,6 @@
 typedef struct {
     uint8_t gpio;
     bool state;
-    bool latched;
 } board_io;
 
 typedef struct {
