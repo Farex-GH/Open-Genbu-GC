@@ -16,6 +16,8 @@
  *
  * When the code is done being executed, the user should call proc_free to
  * return memory.
+ *
+ * Right now this is only set up for single-core operation.
  */
 
 /*
