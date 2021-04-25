@@ -7,11 +7,7 @@
 #include "usb_common.h"
 
 #include "descriptors.h"
-#include "usb_gamepad.h" /* XXX: Needed for ep1_cb, instead we should
-                            make a function that takes it in as an argument
-                            and we add it so we don't need to include the
-                            gamepad header
-                           */
+
 #define usb_hw_set hw_set_alias(usb_hw)
 #define usb_hw_clear hw_clear_alias(usb_hw)
 
@@ -48,7 +44,7 @@ struct usb_device_configuration {
 /*
  * TODO: Integrate this state machine with other transfers, not just HID
  * report.
- * The Raspberry Pi example assumes all of their transfers complet in 64 bytes.
+ * The Raspberry Pi example assumes all of their transfers complete in 64 bytes.
  */
 typedef enum {
     XFER_STATE_DONE = 0x00,

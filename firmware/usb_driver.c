@@ -24,14 +24,6 @@
 #include "descriptors.h"
 #include "usb_driver.h"
 
-/*
- * For packets too large to fit in a single transfer, we need to keep track of
- * how much we have transferred
- */
-size_t descr_sent;
-size_t descr_expected;
-USBXferState usb_xfer_state = XFER_STATE_DONE;
-
 /* Callbacks for when the EP finishes transferring */
 void ep0_in_cb(uint8_t *buf, uint16_t len);
 void ep0_out_cb(uint8_t *buf, uint16_t len);
@@ -41,6 +33,14 @@ static bool should_set_address = false;
 static uint8_t dev_addr = 0;
 static volatile bool configured = false;
 static uint8_t ep0_buf[64];
+
+/*
+ * For packets too large to fit in a single transfer, we need to keep track of
+ * how much we have transferred
+ */
+size_t descr_sent;
+size_t descr_expected;
+USBXferState usb_xfer_state = XFER_STATE_DONE;
 
 static struct usb_device_configuration dev_config = {
         .device_descriptor = &device_descriptor,
@@ -274,7 +274,8 @@ void usb_start_transfer(struct usb_endpoint_configuration *ep, uint8_t *buf,
 
     if (ep_is_tx(ep)) {
         /* Need to copy the data from the user buffer to the usb memory */
-        memcpy((void *) ep->data_buffer, (void *) buf, len);
+        /* Cast to remove compiler warning */
+        memcpy((void *)ep->data_buffer, buf, len);
         /* Mark as full */
         val |= USB_BUF_CTRL_FULL;
     }
@@ -324,16 +325,16 @@ static void usb_handle_device_descriptor_cont(void)
 static void usb_handle_config_descriptor(volatile struct usb_setup_packet *pkt)
 {
     uint8_t *buf = &ep0_buf[0];
-
     /* First request will want just the config descriptor */
     const struct usb_configuration_descriptor *d = dev_config.config_descriptor;
     const struct usb_endpoint_configuration *ep = dev_config.endpoints;
+
     memcpy((void *) buf, d, sizeof(struct usb_configuration_descriptor));
     buf += sizeof(struct usb_configuration_descriptor);
 
     /* If we have more than just the config descriptor copy it all */
     if (pkt->wLength >= d->wTotalLength) {
-        memcpy((void *) buf, dev_config.interface_descriptor,
+        memcpy(buf, dev_config.interface_descriptor,
                sizeof(struct usb_interface_descriptor));
         buf += sizeof(struct usb_interface_descriptor);
 
@@ -350,7 +351,7 @@ static void usb_handle_config_descriptor(volatile struct usb_setup_packet *pkt)
         /* Copy all the endpoint descriptors starting from EP1 */
         for (uint i = 2; i < USB_NUM_ENDPOINTS; i++) {
             if (ep[i].descriptor) {
-                memcpy((void *) buf, ep[i].descriptor,
+                memcpy(buf, ep[i].descriptor,
                        sizeof(struct usb_endpoint_descriptor));
                 buf += sizeof(struct usb_endpoint_descriptor);
             }
@@ -359,7 +360,8 @@ static void usb_handle_config_descriptor(volatile struct usb_setup_packet *pkt)
 
     uint32_t len = (uint32_t) buf - (uint32_t) &ep0_buf[0];
     DB_PRINT_L(2, "Sending %d bytes\n", len);
-    usb_start_transfer(usb_get_endpoint_configuration(EP0_IN_ADDR), &ep0_buf[0], len);
+    usb_start_transfer(usb_get_endpoint_configuration(EP0_IN_ADDR), &ep0_buf[0],
+                       len);
 }
 
 /**
@@ -430,8 +432,9 @@ static void usb_set_device_address(volatile struct usb_setup_packet *pkt)
  */
 static void usb_set_device_configuration(volatile struct usb_setup_packet *pkt)
 {
-    /* Only one configuration so just acknowledge the request */
     DB_PRINT_L(1, "Device Enumerated\r\n");
+
+    /* Only one configuration so just acknowledge the request */
     usb_start_transfer(usb_get_endpoint_configuration(EP0_IN_ADDR), NULL, 0);
     configured = true;
 }
@@ -480,6 +483,7 @@ static void usb_handle_get_status(volatile struct usb_setup_packet *pkt)
 {
     uint8_t status[2] = {0};
     uint8_t attrs = dev_config.config_descriptor->bmAttributes;
+
     if (attrs & 0x40) {
         status[0] |= 0x01;
     }
@@ -552,13 +556,15 @@ static void usb_handle_setup_packet(void) {
                     break;
 
                 default:
-                    DB_PRINT_L(1, "Unhandled GET_DESCRIPTOR type 0x%x\r\n", descriptor_type);
+                    DB_PRINT_L(1, "Unhandled GET_DESCRIPTOR type 0x%x\r\n",
+                               descriptor_type);
             }
         } else {
             DB_PRINT_L(1, "Other IN request (0x%x)\r\n", pkt->bRequest);
         }
     } else if (req_direction == USB_DIR_EP_IN) {
         descriptor_type = pkt->wValue >> 8;
+
         switch (descriptor_type) {
         case USB_HID_DESCRIPTOR_REPORT:
             DB_PRINT_L(1, "GET REPORT DESCRIPTOR\r\n");
@@ -566,7 +572,8 @@ static void usb_handle_setup_packet(void) {
             break;
 
         default:
-            DB_PRINT_L(1, "Unhandled hid GET_DESCRIPTOR type 0x%x\r\n", descriptor_type);
+            DB_PRINT_L(1, "Unhandled hid GET_DESCRIPTOR type 0x%x\r\n",
+                       descriptor_type);
         }
     } else if (pkt->bmRequestType == 0x02) {
         switch (req) {
@@ -576,7 +583,6 @@ static void usb_handle_setup_packet(void) {
         case USB_REQUEST_CLEAR_FEATURE:
             usb_handle_clear_feature(pkt);
             break;
-
         }
     }
 }
@@ -604,7 +610,9 @@ static void usb_handle_ep_buff_done(struct usb_endpoint_configuration *ep)
 static void usb_handle_buff_done(uint ep_num, bool in)
 {
     uint8_t ep_addr = ep_num | (in ? USB_DIR_IN : 0);
+
     DB_PRINT_L(3, "EP %d (in = %d) done\n", ep_num, in);
+
     for (uint i = 0; i < USB_NUM_ENDPOINTS; i++) {
         struct usb_endpoint_configuration *ep = &dev_config.endpoints[i];
         if (ep->descriptor && ep->handler) {
@@ -691,8 +699,6 @@ void ep0_in_cb(uint8_t *buf, uint16_t len)
     } else {
         if (usb_xfer_state != XFER_STATE_DONE) {
             usb_handle_xfer(usb_xfer_state);
-            /*usb_start_transfer(usb_get_endpoint_configuration(EP0_OUT_ADDR),
-                               NULL, 0);*/
         } else {
             /* Receive a zero length status packet from the host on EP0 OUT */
             usb_start_transfer(usb_get_endpoint_configuration(EP0_OUT_ADDR),
