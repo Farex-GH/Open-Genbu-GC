@@ -44,7 +44,7 @@ void put_leds(const uint32_t *leds, size_t len, uint8_t pio_sm)
 void format_leds(const io_map_container *ioc, ws2812_dirs *lbooster,
                  ws2812_dirs *rbooster, uint32_t color)
 {
-    memset(rbooster->leds.leds, 0, sizeof(rbooster->leds.leds)); 
+    memset(rbooster->leds.leds, 0, sizeof(rbooster->leds.leds));
     memset(lbooster->leds.leds, 0, sizeof(lbooster->leds.leds));
     /* We assume the ordering in IOC is URDL and comes first */
     /* TODO: Create a test to ensure this ordering is maintained */
@@ -111,8 +111,8 @@ void cpu1_control_loop(ws2812_dirs *lbooster, ws2812_dirs *rbooster)
             multicore_fifo_clear_irq();
             /*
              * We expect this to be the address of the global IO map container.
-             * To be safe, we'll cast and verify that nothing else messed with the
-             * FIFO.
+             * To be safe, we'll cast and verify that nothing else messed with
+             * the FIFO.
              */
             ioc = ioc_safe_cast((void *)fifo_val);
             if (ioc) {
@@ -124,7 +124,6 @@ void cpu1_control_loop(ws2812_dirs *lbooster, ws2812_dirs *rbooster)
             __WFE;
         }
     }
-
 }
 
 void handle_ring_led(void) {
