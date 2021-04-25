@@ -21,22 +21,25 @@ bool ep1_in_busy = false;
 bool gamepad_held;
 
 /* TODO: Write a test that ensures this map matches the io_map mapping */
+/* TODO: These are all messed up because testing was done with the butons in
+ * the wrong orientation
+ */
 /* Values stolen from Genbu */
 const gamepad_btn io_btn_map[NUM_BTN] = {
-    { .indeces = {0, 11}, .bits = {0x01, 0xff}, .num = 2 }, /* RU */
-    { .indeces = {0, 12}, .bits = {0x02, 0xff}, .num = 2 }, /* RR */
-    { .indeces = {0, 13}, .bits = {0x04, 0xff}, .num = 2 }, /* RD */
     { .indeces = {0, 14}, .bits = {0x08, 0xff}, .num = 2 }, /* RL */
+    { .indeces = {0, 13}, .bits = {0x04, 0xff}, .num = 2 }, /* RD */
+    { .indeces = {0, 12}, .bits = {0x02, 0xff}, .num = 2 }, /* RR */
+    { .indeces = {0, 11}, .bits = {0x01, 0xff}, .num = 2 }, /* RU */
     { .indeces = {0, 11}, .bits = {0x20, 0xff}, .num = 2 }, /* RPRESS */
     { .indeces = {0, 15}, .bits = {0x10, 0xff}, .num = 2 }, /* LPRESS */
     { .indeces = {1},     .bits = {0x01}, .num = 1 }        /* START */
 };
 
 const gamepad_btn io_dpad_map[NUM_DPAD] = {
+    { .indeces = {2, 8},     .bits = {0x06, 0xff}, .num = 2 }, /* LL */
     { .indeces = {2, 9},     .bits = {0x08, 0xff}, .num = 2 }, /* LU */
     { .indeces = {2, 7},     .bits = {0x02, 0xff}, .num = 2 }, /* LR */
-    { .indeces = {2, 10},    .bits = {0x04, 0xff}, .num = 2 }, /* LD */
-    { .indeces = {2, 8},     .bits = {0x06, 0xff}, .num = 2 } /* LL */
+    { .indeces = {2, 10},    .bits = {0x04, 0xff}, .num = 2 } /* LD */
 };
 
 const uint8_t gamepad_template[] = {
@@ -126,8 +129,7 @@ static bool usb_dpad_map_to_buf(const gamepad_btn *usb_map,
      * XXX: In the case where the d-pad value is 8, we set the buffer to 0
      * (0x08 ^ 0x08), unless there's another value, then it's averaged like any
      * other value, but it's an 8 instead of 0.
-     * We do this in a clunky way, and there should be an obvious better way
-     * to do this, because this edge case would be weird to write in RTL.
+     * We do this in a clunky way, and there should be an obvious better way.
      *
      * If there are multiple inputs, we add the inputs and then divide by the
      * number of inputs.
@@ -141,6 +143,14 @@ static bool usb_dpad_map_to_buf(const gamepad_btn *usb_map,
         if (io_map[i].state == STATE_BUTTON_PRESSED) {
             ++press_cnt;
             btn = &usb_map[i];
+
+            /*
+             * HACK: UR needs to be 1, because U acts as 0 and R is 2.
+             * However, for UL, which is 7, U acts as 8 and and L is 6
+             */
+            if (press_cnt > 1 && (dpad_val == 0x08 && btn->bits[0] == 0x02)) {
+                dpad_val = 0;
+            }
             dpad_val += btn->bits[0];
 
             /* Now do the FF byte(s) */
@@ -184,7 +194,10 @@ __prio_queue void *usb_gamepad_format_and_send(void *arg)
         all_high = false;
     }
 
-    /* Make sure messages don't get gobbled, spin if needed */
+    /*
+     * Make sure messages don't get gobbled, spin if needed.
+     * In practice, I don't think I've seen this get triggered.
+     */
     while(ep1_in_busy);
     send_gamepad(usb_buf);
     ep1_in_busy = true;

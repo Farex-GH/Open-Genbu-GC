@@ -1,3 +1,8 @@
+/*
+ * Some of this file is copied from Raspberry Pi USB low level example, with
+ * some changes added to make it more flexible and more correct.
+ */
+
 #include <stdio.h>
 #include <stdint.h>
 #include <stdlib.h>
@@ -273,8 +278,6 @@ void usb_start_transfer(struct usb_endpoint_configuration *ep, uint8_t *buf,
         /* Mark as full */
         val |= USB_BUF_CTRL_FULL;
     }
-
-    GPIO_TOGGLE(PIN_DBG_1);
 
     /* Set pid and flip for next transfer.  This swaps between buffers. */
     val |= ep->next_pid ? USB_BUF_CTRL_DATA1_PID : USB_BUF_CTRL_DATA0_PID;
