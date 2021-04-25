@@ -26,20 +26,20 @@ bool gamepad_held;
  */
 /* Values stolen from Genbu */
 const gamepad_btn io_btn_map[NUM_BTN] = {
-    { .indeces = {0, 14}, .bits = {0x08, 0xff}, .num = 2 }, /* RL */
-    { .indeces = {0, 13}, .bits = {0x04, 0xff}, .num = 2 }, /* RD */
-    { .indeces = {0, 12}, .bits = {0x02, 0xff}, .num = 2 }, /* RR */
-    { .indeces = {0, 11}, .bits = {0x01, 0xff}, .num = 2 }, /* RU */
+    { .indeces = {0, 14}, .bits = {0x08, 0xff}, .num = 2 }, /* RU */
+    { .indeces = {0, 13}, .bits = {0x04, 0xff}, .num = 2 }, /* RR */
+    { .indeces = {0, 12}, .bits = {0x02, 0xff}, .num = 2 }, /* RD */
+    { .indeces = {0, 11}, .bits = {0x01, 0xff}, .num = 2 }, /* RL */
     { .indeces = {0, 11}, .bits = {0x20, 0xff}, .num = 2 }, /* RPRESS */
     { .indeces = {0, 15}, .bits = {0x10, 0xff}, .num = 2 }, /* LPRESS */
     { .indeces = {1},     .bits = {0x01}, .num = 1 }        /* START */
 };
 
 const gamepad_btn io_dpad_map[NUM_DPAD] = {
-    { .indeces = {2, 8},     .bits = {0x06, 0xff}, .num = 2 }, /* LL */
-    { .indeces = {2, 9},     .bits = {0x08, 0xff}, .num = 2 }, /* LU */
-    { .indeces = {2, 7},     .bits = {0x02, 0xff}, .num = 2 }, /* LR */
-    { .indeces = {2, 10},    .bits = {0x04, 0xff}, .num = 2 } /* LD */
+    { .indeces = {2, 8},     .bits = {0x06, 0xff}, .num = 2 }, /* LU */
+    { .indeces = {2, 9},     .bits = {0x08, 0xff}, .num = 2 }, /* LR */
+    { .indeces = {2, 7},     .bits = {0x02, 0xff}, .num = 2 }, /* LD */
+    { .indeces = {2, 10},    .bits = {0x04, 0xff}, .num = 2 } /* LL */
 };
 
 const uint8_t gamepad_template[] = {
