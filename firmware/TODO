@@ -1,37 +1,14 @@
 FIRMWARE
 
-- Investigate debounce
-    - Either needs to be done in firmware, or microswitch has internal
-      debouncing.  Probably the former.
-    - For firmware debounce, latch on first high pulse and only send the press
-      if we latched on this IRQ trigger.
-        * Have an RTC/timer fire after  10ms or so to unlatch.
-
-- Light up buttons
-    - Might just be a LEDs that can be driven directly
-
-- Ring LED
-    - Determine current draw, see if we can run at half brightness and be okay
-    - If draw is too high, need to investigate using a FET that enables barrel
-      jack power.
-    - Use PIO to control the LEDs, they look like WS2812s
-    - Add functions that the user can decide at compile-time to use for LED
-      pattern.
-
 - Pretty-fy files
     - Some of the USB stuff could be improved on a bit, and deviated from what
       the Pi Foundation wrote.
-
-- Ease of use firmware downloading/upgrading
-    - Not everyone has a Pi to bitbang SWD to download firmware, the Pico has
-      a way to drag and drop firmware to upgrade it, investigate that.
 
 - Use USB CDC for LED configuration
     - Depends if Switch is okay with composite devices
     - Also needs some sort of protocol to parse user input for how LEDs are
       handled
     - Might be abandoned unless I have free time
-
 
 REPOSITORY
 
