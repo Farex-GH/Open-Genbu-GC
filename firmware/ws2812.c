@@ -107,7 +107,7 @@ void cpu1_control_loop(ws2812_dirs *lbooster, ws2812_dirs *rbooster)
     uint32_t fifo_val;
     while (1) {
         if (multicore_fifo_pop_timeout_us(1000, &fifo_val)) {
-            DB_PRINT_L(2, "FIFO Popped!\n");
+            DB_PRINT_L(5, "FIFO Popped!\n");
             multicore_fifo_clear_irq();
             /*
              * We expect this to be the address of the global IO map container.
@@ -119,7 +119,7 @@ void cpu1_control_loop(ws2812_dirs *lbooster, ws2812_dirs *rbooster)
                 ws2812_set_leds(ioc, lbooster, rbooster);
             }
         } else {
-            DB_PRINT_L(2, "CPU1 Woke up but could not pop FIFO\n");
+            DB_PRINT_L(5, "CPU1 Woke up but could not pop FIFO\n");
             multicore_fifo_clear_irq();
             __WFE;
         }
