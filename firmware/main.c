@@ -52,6 +52,11 @@ int main(void) {
     multicore_launch_core1(handle_ring_led);
 
     /* Spin until USB is ready */
+    /*
+     * TODO: Something good to do would be to have some LED activity happening
+     * while the device is enumerating.
+     * Once enumerated, some other brief LED activity could happen.
+     */
     while(!usb_is_configured());
 
     control_loop();
