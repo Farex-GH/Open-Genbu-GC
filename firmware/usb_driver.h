@@ -11,6 +11,33 @@
 #define usb_hw_set hw_set_alias(usb_hw)
 #define usb_hw_clear hw_clear_alias(usb_hw)
 
+/*
+ * Using the driver:
+ *
+ * - Set up your descriptors to whatever you need.
+ *   Descriptors are in the usb descriptors files.
+ *   Certain things aren't supported, but HID devices shouldn't have any
+ *   problems.
+ *   I have not tested CDC, VUD, composite devices, or any other device class.
+ *   The driver right now is just enough to get HID working on most things.
+ *
+ * - Initialize any EP callbacks using usb_ep_add_callback.
+ *   These will be called after the EP transfer finishes.
+ *   Don't modify EP0 callbacks unless you know what you're doing.
+ *
+ * - Initialize and enumerate USB by using usb_device_init.
+ *   If you want, you could also check if you're configured by using
+ *   usb_is_configured
+ *
+ * - To send data, use usb_start_transfer.
+ *   This will DMA data using the available USB DMAs.
+ *   If transferring a packet larger than the EP size, you cannot simply
+ *   while loop over usb_start_transfer to keep transferring as fast as
+ *   possible.
+ *   Instead, use a callback so you know when your transfer is done. That
+ *   callback will then tell you that you're ready to send more data.
+ */
+
 typedef void (*usb_ep_handler)(uint8_t *buf, uint16_t len);
 
 /* Struct in which we keep the endpoint configuration */
