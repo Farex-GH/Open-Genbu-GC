@@ -128,5 +128,5 @@ const unsigned char lang_descriptor[] = {
 
 const unsigned char *descriptor_strings[] = {
         "Raspberry Pi",    /* Vendor */
-        "Pico Test Device" /* Product */
+        "Groove Coaster Controller" /* Product */
 };
