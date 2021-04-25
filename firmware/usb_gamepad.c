@@ -17,9 +17,6 @@
 
 bool ep1_in_busy = false;
 
-/* Global needed so EP1 CB knows if it needs to re-send packets */
-bool gamepad_held;
-
 /* TODO: Write a test that ensures this map matches the io_map mapping */
 /* TODO: These are all messed up because testing was done with the butons in
  * the wrong orientation
@@ -70,26 +67,7 @@ __prio_queue void *send_gamepad(void *buf)
 
 void ep1_in_cb(uint8_t *buf, uint16_t len)
 {
-    DB_PRINT_L(3, "gamepad_held=%d\n", gamepad_held);
-
     ep1_in_busy = false;
-    if (gamepad_held) {
-        /*
-         * This looks scary, but should be okay.
-         * buf points to USB memory, which has a global instance.
-         * This memory should not change between when this function happens and
-         * when the function added to the queue is executed, since that would
-         * mean another USB transfer would have to have happened on EP1.
-         *
-         * TODO: A more proper thing to do would to be contain buf and len in
-         * a struct that has a longer lifetime.
-         * It would have to be global, but that's ugly.
-         *
-         * XXX: Commented for now because the host (at least on the switch)
-         * sees the button as held until a "release" packet is sent.
-         */
-//        proc_enqueue(send_gamepad, buf, PRIORITY_LEVEL_HIGHEST);
-    }
 }
 
 void ep2_out_cb(uint8_t *buf, uint16_t len)
@@ -147,6 +125,9 @@ static bool usb_dpad_map_to_buf(const gamepad_btn *usb_map,
             /*
              * HACK: UR needs to be 1, because U acts as 0 and R is 2.
              * However, for UL, which is 7, U acts as 8 and and L is 6
+             * 
+             * A better solution might be to just do a map.
+             * e.g. U -> 0, UR -> 1, etc.
              */
             if (press_cnt > 1 && (dpad_val == 0x08 && btn->bits[0] == 0x02)) {
                 dpad_val = 0;
@@ -177,22 +158,16 @@ __prio_queue void *usb_gamepad_format_and_send(void *arg)
     size_t i;
     io_map_container *ioc = (io_map_container *)arg;
     board_io *io = ioc->btn_map;
-    bool all_high = true;
-    bool dpad_all_high;
     DB_PRINT_L(3, "Formatting buffer\n");
 
     memcpy(usb_buf, gamepad_template, ARRAY_SIZE(usb_buf));
     for (i = 0; i < ioc->btn_size; ++i) {
         if (io[i].state == STATE_BUTTON_PRESSED) {
             usb_btn_map_to_buf(io_btn_map, i, usb_buf);
-            all_high = false;
         }
     }
-    dpad_all_high = !usb_dpad_map_to_buf(io_dpad_map, ioc, usb_buf);
 
-    if (!dpad_all_high || !all_high) {
-        all_high = false;
-    }
+    usb_dpad_map_to_buf(io_dpad_map, ioc, usb_buf);
 
     /*
      * Make sure messages don't get gobbled, spin if needed.
@@ -201,30 +176,6 @@ __prio_queue void *usb_gamepad_format_and_send(void *arg)
     while(ep1_in_busy);
     send_gamepad(usb_buf);
     ep1_in_busy = true;
-
-    /*
-     * XXX: Maybe ugly?  I would need to revisit this.
-     * If not all of the buttons are high, we need to add another send function
-     * to the priority queue.  This is because we need to keep sending presses
-     * to tell the host that we are holding the button down.
-     *
-     * This will be handled by the EP1 callback.  An alternative would be to
-     * add a timer to the timer queue equal to the polling rate, and when that
-     * elapses, the callback for that is usb_gamepad_format_and_send.
-     * In order to communicate with ep1_cb(), we use a global telling it if we
-     * have buttons held and need to keep sending packets.
-     * Another alternative would be something that is evoked when the
-     * USB transfer complete interrupt is set.
-     *
-     * When the user releases all buttons the GPIO IRQ will update the map
-     * accordingly, meaning all buttons will be high and we stop re-sending
-     * packets.
-     */
-    if (all_high) {
-        gamepad_held = false;
-    } else {
-        gamepad_held = true;
-    }
 
     return NULL;
 }
