@@ -11,6 +11,8 @@
 #include "hardware/structs/usb.h"
 
 /* bmRequestType bit definitions */
+#define USB_REQ_TYPE_DIR_MASK 0x80
+
 #define USB_REQ_TYPE_STANDARD 0x00u
 #define USB_REQ_TYPE_TYPE_MASK 0x60u
 #define USB_REQ_TYPE_TYPE_CLASS 0x20u
@@ -37,7 +39,6 @@
 #define USB_DT_STRING 0x03
 #define USB_DT_INTERFACE 0x04
 #define USB_DT_ENDPOINT 0x05
-#define USB_DT_REPORT 0x22
 
 #define USB_REQUEST_GET_STATUS 0x0
 #define USB_REQUEST_CLEAR_FEATURE 0x01

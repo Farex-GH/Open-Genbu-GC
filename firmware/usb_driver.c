@@ -500,20 +500,144 @@ static void usb_handle_clear_feature(volatile struct usb_setup_packet *pkt)
     usb_start_transfer(usb_get_endpoint_configuration(EP0_IN_ADDR), NULL, 0);
 }
 
+static void usb_handle_descriptor(volatile struct usb_setup_packet *pkt)
+{
+    uint16_t descriptor_type = pkt->wValue >> 8;
+
+    switch (descriptor_type) {
+    case USB_DT_DEVICE:
+        usb_handle_device_descriptor(pkt);
+        DB_PRINT_L(1, "GET DEVICE DESCRIPTOR\r\n");
+        break;
+
+    case USB_DT_CONFIG:
+        usb_handle_config_descriptor(pkt);
+        DB_PRINT_L(1, "GET CONFIG DESCRIPTOR\r\n");
+        break;
+
+    case USB_DT_STRING:
+        usb_handle_string_descriptor(pkt);
+        DB_PRINT_L(1, "GET STRING DESCRIPTOR\r\n");
+        break;
+
+    case USB_HID_DESCRIPTOR_REPORT:
+        DB_PRINT_L(1, "GET REPORT DESCRIPTOR\r\n");
+        usb_handle_report_descriptor(pkt);
+        break;
+
+    default:
+        DB_PRINT_L(1, "Unhandled GET_DESCRIPTOR type 0x%x\r\n",
+                   descriptor_type);
+    }
+}
+
+static void usb_handle_setup_dir_out_rec_dev(volatile struct usb_setup_packet *
+                                             pkt)
+{
+    uint8_t req = pkt->bRequest;
+
+    switch (req) {
+    case USB_REQUEST_SET_ADDRESS:
+        usb_set_device_address(pkt);
+        break;
+    case USB_REQUEST_SET_CONFIGURATION:
+        usb_set_device_configuration(pkt);
+        break;
+    default:
+        DB_PRINT_L(1, "Other OUT request (0x%x)\r\n", pkt->bRequest);
+        break;
+    }
+}
+
+static void usb_handle_setup_dir_out_rec_ep(volatile struct usb_setup_packet *
+                                             pkt)
+{
+    uint8_t req = pkt->bRequest;
+
+    switch (req) {
+    case USB_REQUEST_GET_STATUS:
+        usb_handle_get_status(pkt);
+        break;
+    case USB_REQUEST_CLEAR_FEATURE:
+        usb_handle_clear_feature(pkt);
+        break;
+    default:
+        DB_PRINT_L(1, "Other OUT request (0x%x)\r\n", pkt->bRequest);
+        break;
+    }
+}
+
+static void usb_handle_setup_dir_out(volatile struct usb_setup_packet *pkt)
+{
+    uint8_t req_recip = (pkt->bmRequestType & USB_REQ_TYPE_RECIPIENT_MASK);
+
+    switch (req_recip) {
+    case USB_REQ_TYPE_RECIPIENT_DEVICE:
+        usb_handle_setup_dir_out_rec_dev(pkt);
+        break;
+    case USB_REQ_TYPE_RECIPIENT_ENDPOINT:
+        usb_handle_setup_dir_out_rec_ep(pkt);
+        break;
+    default:
+        DB_PRINT_L(1, "Cannot handle setup OUT recipient %d\n", req_recip);
+        break;
+    }
+}
+
+static void usb_handle_setup_dir_in_rec_dev(volatile struct usb_setup_packet *
+                                            pkt)
+{
+    uint8_t req = pkt->bRequest;
+
+    switch (req) {
+    case USB_REQUEST_GET_DESCRIPTOR:
+        usb_handle_descriptor(pkt);
+        break;
+    default:
+        DB_PRINT_L(1, "Other IN request (0x%x)\r\n", pkt->bRequest);
+        break;
+    }
+}
+
+static void usb_handle_setup_dir_in_rec_int(volatile struct usb_setup_packet *
+                                            pkt)
+{
+    uint8_t req = pkt->bRequest;
+
+    switch (req) {
+    case USB_REQUEST_GET_DESCRIPTOR:
+        usb_handle_descriptor(pkt);
+        break;
+    default:
+        DB_PRINT_L(1, "Unhandled request 0x%x\r\n", req);
+        break;
+    }
+}
+
+static void usb_handle_setup_dir_in(volatile struct usb_setup_packet *pkt)
+{
+    uint8_t req_recip = (pkt->bmRequestType & USB_REQ_TYPE_RECIPIENT_MASK);
+
+    switch(req_recip) {
+    case USB_REQ_TYPE_RECIPIENT_DEVICE:
+        usb_handle_setup_dir_in_rec_dev(pkt);
+        break;
+    case USB_REQ_TYPE_RECIPIENT_INTERFACE:
+        usb_handle_setup_dir_in_rec_int(pkt);
+        break;
+    default:
+        DB_PRINT_L(1, "Cannot handle setup IN recipient %d\n", req_recip);
+        break;
+    }
+}
+
 /**
  * @brief Respond to a setup packet from the host.
  */
 static void usb_handle_setup_packet(void) {
     volatile struct usb_setup_packet *pkt = (volatile struct usb_setup_packet *)
                                             &usb_dpram->setup_packet;
-
-    /*
-     * TODO: The RPi foundation did not write this out correctly.
-     * bmRequestType is a bitfield, and they omitted a lot of bRequest
-     */
-    uint8_t req_direction = pkt->bmRequestType;
-    uint8_t req = pkt->bRequest;
-    uint16_t descriptor_type;
+    uint8_t req_direction = !!(pkt->bmRequestType & USB_REQ_TYPE_DIR_MASK);
 
     DB_PRINT_L(2, "Received setup packet:\n"
                " - bmRequestType = 0x%x\n"
@@ -527,63 +651,15 @@ static void usb_handle_setup_packet(void) {
     /* Reset PID to 1 for EP0 IN */
     usb_get_endpoint_configuration(EP0_IN_ADDR)->next_pid = 1u;
 
-    if (req_direction == USB_DIR_OUT) {
-        if (req == USB_REQUEST_SET_ADDRESS) {
-            usb_set_device_address(pkt);
-        } else if (req == USB_REQUEST_SET_CONFIGURATION) {
-            usb_set_device_configuration(pkt);
-        } else {
-            DB_PRINT_L(1, "Other OUT request (0x%x)\r\n", pkt->bRequest);
-        }
-    } else if (req_direction == USB_DIR_IN) {
-        if (req == USB_REQUEST_GET_DESCRIPTOR) {
-            descriptor_type = pkt->wValue >> 8;
-
-            switch (descriptor_type) {
-                case USB_DT_DEVICE:
-                    usb_handle_device_descriptor(pkt);
-                    DB_PRINT_L(1, "GET DEVICE DESCRIPTOR\r\n");
-                    break;
-
-                case USB_DT_CONFIG:
-                    usb_handle_config_descriptor(pkt);
-                    DB_PRINT_L(1, "GET CONFIG DESCRIPTOR\r\n");
-                    break;
-
-                case USB_DT_STRING:
-                    usb_handle_string_descriptor(pkt);
-                    DB_PRINT_L(1, "GET STRING DESCRIPTOR\r\n");
-                    break;
-
-                default:
-                    DB_PRINT_L(1, "Unhandled GET_DESCRIPTOR type 0x%x\r\n",
-                               descriptor_type);
-            }
-        } else {
-            DB_PRINT_L(1, "Other IN request (0x%x)\r\n", pkt->bRequest);
-        }
-    } else if (req_direction == USB_DIR_EP_IN) {
-        descriptor_type = pkt->wValue >> 8;
-
-        switch (descriptor_type) {
-        case USB_HID_DESCRIPTOR_REPORT:
-            DB_PRINT_L(1, "GET REPORT DESCRIPTOR\r\n");
-            usb_handle_report_descriptor(pkt);
-            break;
-
-        default:
-            DB_PRINT_L(1, "Unhandled hid GET_DESCRIPTOR type 0x%x\r\n",
-                       descriptor_type);
-        }
-    } else if (pkt->bmRequestType == 0x02) {
-        switch (req) {
-        case USB_REQUEST_GET_STATUS:
-            usb_handle_get_status(pkt);
-            break;
-        case USB_REQUEST_CLEAR_FEATURE:
-            usb_handle_clear_feature(pkt);
-            break;
-        }
+    switch (req_direction) {
+    case USB_DIR_OUT:
+        usb_handle_setup_dir_out(pkt);
+        break;
+    case USB_DIR_IN:
+        usb_handle_setup_dir_in(pkt);
+        break;
+    default:
+        DBG_ASSERT(0);
     }
 }
 
