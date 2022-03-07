@@ -15,9 +15,6 @@ FIRMWARE
       handled
     - Might be abandoned unless I have free time
 
-- Make LEDs and USB happen on the same core.
-    - It's doable, just don't be lazy.
-
 REPOSITORY
 
 - Organize things better
