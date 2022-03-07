@@ -1,0 +1,23 @@
+FIRMWARE
+
+- Pretty-fy files
+    - Some of the USB stuff could be improved on a bit, and deviated from what
+      the Pi Foundation wrote.
+    - dpad vs button press handling could be done better. Probably a generic
+      struct with fields that describe which parts of the USB descriptor they
+      modify.
+        - This is hard because of how dpad values need to be set in the USB
+          packet.
+
+- Use USB CDC for LED configuration
+    - Depends if Switch is okay with composite devices
+    - Also needs some sort of protocol to parse user input for how LEDs are
+      handled
+    - Might be abandoned unless I have free time
+
+- Make LEDs and USB happen on the same core.
+    - It's doable, just don't be lazy.
+
+REPOSITORY
+
+- Organize things better
