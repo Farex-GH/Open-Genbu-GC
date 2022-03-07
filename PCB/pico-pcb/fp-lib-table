@@ -1,0 +1,4 @@
+(fp_lib_table
+  (lib (name MountingHole)(type KiCad)(uri ${KIPRJMOD}/MountingHole)(options "")(descr ""))
+  (lib (name pico-pcb)(type KiCad)(uri C:/Users/Joe/Documents/GitHub/Open-Genbu-GC/PCB/pico-pcb)(options "")(descr ""))
+)
