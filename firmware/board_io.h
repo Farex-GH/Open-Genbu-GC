@@ -22,8 +22,6 @@ typedef struct {
 } board_io;
 
 typedef struct {
-    /* For IPC, we want to safely cast to this type */
-    uint32_t type;
     /*
      * TODO: If we're clever about this, we can simplify some GPIO iterating
      * code by combining the button and d-pad maps and being able to iterate

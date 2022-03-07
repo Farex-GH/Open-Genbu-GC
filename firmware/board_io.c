@@ -88,7 +88,6 @@ alarm_pool_t *io_pool;
 
 /* When passing maps around, we need to be aware of their size as well */
 io_map_container io_container = {
-    .type = TYPE_IOMC,
     .btn_map = btn_map,
     .btn_size = ARRAY_SIZE(btn_map),
     .dpad_map = dpad_map,
